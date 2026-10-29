@@ -116,6 +116,16 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Pop-Location
 
+      - name: Prepare Python environment required by Android Gradle
+        shell: pwsh
+        run: |
+          python -m venv .venv
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./.venv/Scripts/python.exe --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & ./.venv/Scripts/python.exe plugins/tools/sync_plugin_packages.py --help
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Install Java
         uses: actions/setup-java@v4
         with:
