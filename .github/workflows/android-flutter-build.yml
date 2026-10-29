@@ -143,6 +143,25 @@ jobs:
         shell: pwsh
         run: fvm install --skip-pub-get
 
+      - name: Cache Flutter package downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PUB_CACHE }}
+          key: windows-pub-${{ hashFiles('apps/flutter/app/pubspec.lock') }}
+
+      - name: Fetch Flutter dependencies with retries
+        working-directory: apps/flutter/app
+        shell: pwsh
+        run: |
+          git config --global http.version HTTP/1.1
+          for ($attempt = 1; $attempt -le 4; $attempt++) {
+            fvm flutter pub get --enforce-lockfile
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            if ($attempt -eq 4) { exit $LASTEXITCODE }
+            Write-Host "Dependency download failed; retry $attempt of 4"
+            Start-Sleep -Seconds 15
+          }
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         with:
