@@ -101,10 +101,14 @@ jobs:
       - name: Install built-in plugin dependencies
         shell: pwsh
         run: |
+          corepack enable pnpm
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Push-Location plugins/packages/buildin/workflow
           corepack pnpm@10.7.0 install --frozen-lockfile
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          corepack pnpm --version
+          pnpm --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pnpm run pack:toolpkg
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Pop-Location
           Push-Location plugins/packages/buildin/character_cards
