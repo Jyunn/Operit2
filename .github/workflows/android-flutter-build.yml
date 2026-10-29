@@ -98,6 +98,16 @@ jobs:
         shell: pwsh
         run: npm install --prefix .ci-tools/typescript --no-save --no-package-lock typescript@5.8.3
 
+      - name: Install built-in plugin dependencies
+        shell: pwsh
+        run: |
+          corepack pnpm --dir plugins/packages/buildin/workflow install --frozen-lockfile
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Push-Location plugins/packages/buildin/character_cards
+          node -e "const {createRequire}=require('node:module'); const p=require('node:path'); const r=createRequire(p.resolve('../workflow/package.json')); console.log(r.resolve('typescript'));"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Pop-Location
+
       - name: Install Java
         uses: actions/setup-java@v4
         with:
