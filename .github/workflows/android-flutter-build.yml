@@ -101,8 +101,12 @@ jobs:
       - name: Install built-in plugin dependencies
         shell: pwsh
         run: |
-          corepack pnpm --dir plugins/packages/buildin/workflow install --frozen-lockfile
+          Push-Location plugins/packages/buildin/workflow
+          corepack pnpm@10.7.0 install --frozen-lockfile
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          corepack pnpm --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Pop-Location
           Push-Location plugins/packages/buildin/character_cards
           node -e "const {createRequire}=require('node:module'); const p=require('node:path'); const r=createRequire(p.resolve('../workflow/package.json')); console.log(r.resolve('typescript'));"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
