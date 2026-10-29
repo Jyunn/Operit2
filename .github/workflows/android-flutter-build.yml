@@ -94,6 +94,10 @@ jobs:
         with:
           node-version: 24
 
+      - name: Install project TypeScript compiler
+        shell: pwsh
+        run: npm install --prefix .ci-tools/typescript --no-save --no-package-lock typescript@5.8.3
+
       - name: Install Java
         uses: actions/setup-java@v4
         with:
