@@ -65,8 +65,39 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+  build-android-v8:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.95.0
+          targets: aarch64-linux-android
+      - name: Install V8 build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libclang-dev lld ninja-build pkg-config
+          sdkmanager "ndk;27.2.12479018"
+      - name: Cache verified V8 artifacts
+        uses: actions/cache@v4
+        with:
+          path: tools/release/work/android-v8
+          key: linux-android-v8-ndk27-${{ hashFiles('tools/build_scripts/prepare_android_v8.py', 'apps/flutter/native/operit-flutter-bridge/Cargo.lock') }}
+      - name: Build Android V8 on Linux
+        run: |
+          export OPERIT_ANDROID_V8_NDK="$ANDROID_HOME/ndk/27.2.12479018"
+          python tools/build_scripts/prepare_android_v8.py --target aarch64-linux-android --env-file /tmp/operit-v8.env
+      - name: Upload verified V8 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: operit2-android-v8
+          path: tools/release/work/android-v8/*/aarch64-linux-android/
+          if-no-files-found: error
+          retention-days: 3
+
   build-android:
-    needs: build-android-runtime
+    needs: [build-android-runtime, build-android-v8]
     runs-on: windows-2025
     timeout-minutes: 90
     env:
@@ -213,11 +244,18 @@ jobs:
           RELEASE_KEY_PASSWORD=$env:ANDROID_RELEASE_KEY_PASSWORD
           "@ | Set-Content -Path (Join-Path $secretsDir "android-signing.properties") -Encoding utf8
 
-      - name: Cache source-built Android V8
-        uses: actions/cache@v4
+      - name: Install matching Android NDK
+        shell: pwsh
+        run: |
+          & "$env:ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager.bat" "ndk;27.2.12479018"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "OPERIT_ANDROID_V8_NDK=$env:ANDROID_HOME/ndk/27.2.12479018" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Download Linux-built Android V8
+        uses: actions/download-artifact@v4
         with:
+          name: operit2-android-v8
           path: tools/release/work/android-v8
-          key: ${{ runner.os }}-${{ runner.arch }}-android-v8-${{ hashFiles('tools/build_scripts/prepare_android_v8.py', 'apps/flutter/native/operit-flutter-bridge/Cargo.lock') }}
 
       - name: Check build environment
         shell: pwsh
