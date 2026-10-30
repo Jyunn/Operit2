@@ -255,7 +255,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: operit2-android-v8
-          path: tools/release/work/android-v8
+          path: tools/release/work/android-v8/152.2.0/aarch64-linux-android
 
       - name: Check build environment
         shell: pwsh
